@@ -6,70 +6,62 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true" class="ion-padding">
-      <!-- Wenn ein Foto da ist, zeige es an -->
-      <div v-if="fotoUrl" class="foto-container">
-        <img :src="fotoUrl" alt="Aufgenommenes Foto" />
+    <ion-content :fullscreen="true">
+      <!-- Hinweis, wenn noch keine Fotos da sind -->
+      <div v-if="photos.length === 0" class="hinweis">
+        <p>Noch keine Fotos.</p>
+        <p>Tippe auf den Button, um ein Foto aufzunehmen.</p>
       </div>
 
-      <!-- Wenn noch kein Foto da ist, zeige einen Hinweis -->
-      <div v-else class="hinweis">
-        <p>Noch kein Foto aufgenommen.</p>
-        <p>Tippe auf den Button, um zu starten.</p>
-      </div>
+      <!-- Galerie: alle Fotos als Raster -->
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6" v-for="photo in photos" :key="photo.filepath">
+            <ion-img :src="photo.webviewPath" @click="oeffneFoto(photo)"></ion-img>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
 
-      <!-- Der Kamera-Button -->
-      <ion-button expand="block" @click="fotoAufnehmen()">
-        <ion-icon :icon="camera" slot="start"></ion-icon>
-        Foto aufnehmen
-      </ion-button>
+      <!-- Kamera-Button, schwebend unten rechts -->
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="takePhoto()">
+          <ion-icon :icon="camera"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonIcon,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
+  IonGrid, IonRow, IonCol, IonImg, IonFab, IonFabButton, IonIcon,
 } from '@ionic/vue';
 import { camera } from 'ionicons/icons';
-import { ref } from 'vue';
-import { Camera } from '@capacitor/camera';
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { usePhotoGallery, UserPhoto } from '@/composables/usePhotoGallery';
 
-// Hier speichern wir die Bild-URL, die im Template angezeigt wird
-const fotoUrl = ref<string>('');
+const { photos, takePhoto, loadSaved } = usePhotoGallery();
+const router = useRouter();
 
-const fotoAufnehmen = async () => {
-  try {
-    const result = await Camera.takePhoto({
-      quality: 90,
-    });
-    // webPath kann direkt als Bildquelle verwendet werden
-    fotoUrl.value = result.webPath;
-  } catch (e) {
-    // Wenn der Nutzer abbricht oder ein Fehler auftritt
-    console.error('Foto aufnehmen fehlgeschlagen:', e);
-  }
+// Beim Öffnen der Seite gespeicherte Fotos laden
+onMounted(() => {
+  loadSaved();
+});
+
+// Beim Antippen eines Fotos zur Detailseite wechseln
+const oeffneFoto = (photo: UserPhoto) => {
+  // Wir merken uns das gewählte Foto kurz und navigieren
+  const index = photos.value.indexOf(photo);
+  router.push(`/foto/${index}`);
 };
 </script>
 
 <style scoped>
-.foto-container {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.foto-container img {
-  max-width: 100%;
-  border-radius: 8px;
-}
 .hinweis {
   text-align: center;
   color: #888;
-  margin: 40px 0;
+  margin: 60px 20px;
 }
 </style>
