@@ -1,0 +1,7 @@
+{
+  "name": "foto-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
