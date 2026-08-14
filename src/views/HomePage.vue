@@ -74,7 +74,7 @@ const oeffneFoto = (photo: UserPhoto) => {
 };
 
 // Wandelt den gespeicherten Zeitstempel in ein lesbares Datum um
-const formatiereDatum = (zeitstempel: number): string => {
+const formatiereDatum = (zeitstempel: number | undefined): string => {
   if (!zeitstempel) return '';
   const datum = new Date(zeitstempel);
   return datum.toLocaleDateString('de-DE', {

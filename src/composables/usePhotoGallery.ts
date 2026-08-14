@@ -8,7 +8,7 @@ import { Capacitor } from '@capacitor/core';
 export interface UserPhoto {
   filepath: string;
   webviewPath: string;
-  aufnahmedatum: number; // Zeitpunkt der Aufnahme (für Sortierung)
+  aufnahmedatum?: number; // Zeitpunkt der Aufnahme (für Sortierung), optional
 }
 
 const PHOTO_STORAGE = 'photos'; // Schlüssel für die Preferences-Liste
@@ -27,7 +27,7 @@ export const usePhotoGallery = () => {
 
     // Vorne in die Liste einfügen und nach Aufnahmedatum sortieren (neuestes zuerst)
     photos.value = [savedFile, ...photos.value].sort(
-      (a, b) => b.aufnahmedatum - a.aufnahmedatum
+      (a, b) => (b.aufnahmedatum || 0) - (a.aufnahmedatum || 0)
     );
 
     // Liste in Preferences merken
