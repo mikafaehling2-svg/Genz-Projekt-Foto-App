@@ -1,8 +1,7 @@
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
-        <!-- Zurück-Button zur Galerie -->
+      <ion-toolbar color="primary">
         <ion-buttons slot="start">
           <ion-back-button default-href="/home"></ion-back-button>
         </ion-buttons>
@@ -11,9 +10,18 @@
     </ion-header>
 
     <ion-content :fullscreen="true" class="ion-padding">
-      <!-- Das große Foto -->
       <div v-if="foto" class="detail-container">
         <img :src="foto.webviewPath" alt="Foto" />
+
+        <!-- Bearbeiten-Button: nur auf Android sinnvoll -->
+        <ion-button
+          v-if="istAndroid"
+          expand="block"
+          @click="bearbeiten()"
+        >
+          <ion-icon :icon="create" slot="start"></ion-icon>
+          Foto bearbeiten
+        </ion-button>
 
         <!-- Löschen-Button -->
         <ion-button expand="block" color="danger" @click="loeschen()">
@@ -22,7 +30,6 @@
         </ion-button>
       </div>
 
-      <!-- Falls kein Foto gefunden wurde -->
       <div v-else class="hinweis">
         <p>Foto nicht gefunden.</p>
       </div>
@@ -35,25 +42,36 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonButtons, IonBackButton, IonButton, IonIcon,
 } from '@ionic/vue';
-import { trash } from 'ionicons/icons';
+import { trash, create } from 'ionicons/icons';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
+import { PhotoEditor } from '@capawesome/capacitor-photo-editor';
 import { usePhotoGallery } from '@/composables/usePhotoGallery';
 
 const route = useRoute();
 const router = useRouter();
 const { photos, deletePhoto } = usePhotoGallery();
 
-// Den Index aus der URL holen (z. B. /foto/2 → 2)
-const index = computed(() => Number(route.params.index));
+// Nur auf Android soll der Bearbeiten-Button erscheinen
+const istAndroid = computed(() => Capacitor.getPlatform() === 'android');
 
-// Das passende Foto aus der Liste herausgreifen
+const index = computed(() => Number(route.params.index));
 const foto = computed(() => photos.value[index.value]);
+
+const bearbeiten = async () => {
+  if (!foto.value) return;
+  try {
+    // Der Editor braucht den nativen Dateipfad (filepath), nicht den webviewPath
+    await PhotoEditor.editPhoto({ path: foto.value.filepath });
+  } catch (e) {
+    console.error('Bearbeiten fehlgeschlagen:', e);
+  }
+};
 
 const loeschen = async () => {
   if (foto.value) {
     await deletePhoto(foto.value);
-    // Zurück zur Galerie
     router.push('/home');
   }
 };

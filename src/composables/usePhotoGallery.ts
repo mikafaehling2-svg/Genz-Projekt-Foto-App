@@ -6,8 +6,9 @@ import { Capacitor } from '@capacitor/core';
 
 // So sieht ein gespeichertes Foto bei uns aus
 export interface UserPhoto {
-  filepath: string;   // Dateiname im Speicher
-  webviewPath: string; // Pfad zum Anzeigen im <img>
+  filepath: string;
+  webviewPath: string;
+  aufnahmedatum: number; // Zeitpunkt der Aufnahme (für Sortierung)
 }
 
 const PHOTO_STORAGE = 'photos'; // Schlüssel für die Preferences-Liste
@@ -19,11 +20,15 @@ export const usePhotoGallery = () => {
   const takePhoto = async () => {
     const result = await Camera.takePhoto({ quality: 90 });
 
-    const fileName = Date.now() + '.jpeg';
+    const jetzt = Date.now();
+    const fileName = jetzt + '.jpeg';
     const savedFile = await savePicture(result, fileName);
+    savedFile.aufnahmedatum = jetzt;
 
-    // Vorne in die Liste einfügen (neuestes zuerst)
-    photos.value = [savedFile, ...photos.value];
+    // Vorne in die Liste einfügen und nach Aufnahmedatum sortieren (neuestes zuerst)
+    photos.value = [savedFile, ...photos.value].sort(
+      (a, b) => b.aufnahmedatum - a.aufnahmedatum
+    );
 
     // Liste in Preferences merken
     await Preferences.set({
@@ -82,7 +87,10 @@ export const usePhotoGallery = () => {
       }
     }
 
-    photos.value = photosInPreferences;
+    // Nach Aufnahmedatum sortieren (neuestes zuerst); ältere Fotos ohne Datum ans Ende
+    photos.value = photosInPreferences.sort(
+      (a: UserPhoto, b: UserPhoto) => (b.aufnahmedatum || 0) - (a.aufnahmedatum || 0)
+    );
   };
 
   // Ein Foto löschen
